@@ -457,17 +457,33 @@ Note: the 2026Q2 test set contains only ~178 events (partial quarter). The final
 
 ## 5.3b Walk-Forward Portfolio Simulation
 
-OOS predictions from §5.3 are converted into monthly quintile L/S portfolios (equal-weight, 20 bps round-trip TC, 2018Q1–2026Q2). Three portfolio evaluations are reported: **(A)** all-universe combined for Enhanced models; **(B)** SP500-only across all tiers; **(C)** SP1500-only and RU3K-only for Enhanced models. The walk-forward model trains on all-universe events (cross-universe training to maximise fold sample size); per-universe evaluation is applied at the portfolio layer by filtering OOS predictions to each universe's tickers. Full per-universe results are reproduced by the `per-univ-port` cell in `01_analysis.ipynb` (§4b-per-universe).
+OOS predictions from §5.3 are converted into monthly quintile L/S portfolios (equal-weight, 20 bps round-trip TC, 2018Q1–2026Q2). The walk-forward model trains on all-universe events (cross-universe); per-universe evaluation filters predictions to each universe's tickers at the portfolio layer. Three evaluations: **(A)** all-universe combined Enhanced models; **(B)** per-universe Enhanced models for all three universes; **(C)** SP500-only Combined models.
 
-**(A) All-universe walk-forward portfolio — Enhanced models (Part 2):**
+**(A) All-universe walk-forward portfolio — Enhanced models:**
 
 | Model | Net Sharpe | Max DD | N periods |
 |-------|-----------|--------|-----------|
-| ATC Baseline | 0.75 | −16.2% | 100 |
-| **Ridge (α=10)** | **0.83** | **−20.9%** | 100 |
-| LightGBM 200 | 0.63 | −25.5% | 98 |
+| ATC Baseline | +0.75 | −16.2% | 100 |
+| **Ridge (α=10)** | **+0.83** | **−20.9%** | 100 |
+| LightGBM 200 | +0.63 | −25.5% | 98 |
 
-**(B) SP500-only portfolio — all tiers including Combined models (Part 3):**
+**(B) Per-universe walk-forward portfolio — Enhanced models (SP500 / SP1500 / RU3K):**
+
+| Universe | Model | Net Sharpe | Max DD | LS bps/mo | N |
+|----------|-------|-----------|--------|-----------|---|
+| **SP500** | **ATC Baseline** | **+0.59** | **−12.4%** | **+57.6** | 100 |
+| SP500 | Ridge (α=10) | +0.19 | −19.5% | +16.1 | 100 |
+| SP500 | LightGBM 200 | +0.14 | −24.6% | +12.8 | 95 |
+| **SP1500** | **ATC Baseline** | **+0.18** | **−31.2%** | **+12.4** | 100 |
+| SP1500 | Ridge (α=10) | +0.17 | −37.7% | +11.7 | 100 |
+| SP1500 | LightGBM 200 | −0.43 | −49.8% | −34.3 | 98 |
+| **RU3K** | **ATC Baseline** | **+0.98** | **−11.4%** | **+72.1** | 100 |
+| RU3K | Ridge (α=10) | +0.89 | −19.0% | +62.3 | 100 |
+| RU3K | LightGBM 200 | +0.52 | −24.9% | +44.4 | 98 |
+
+*Reproducible via the `per-univ-port` cell in `01_analysis.ipynb`.*
+
+**(C) SP500-only portfolio — Combined models (Part 3):**
 
 | Model | Net Sharpe | Max DD | LS net (bps/mo) | N |
 |-------|-----------|--------|-----------------|---|
@@ -477,19 +493,13 @@ OOS predictions from §5.3 are converted into monthly quintile L/S portfolios (e
 | Combo LGB (772+30) | −0.34 | −28.3% | −27.7 | 97 |
 | Combo XGBoost (772+30) | −0.01 | −21.8% | −0.6 | 93 |
 
-**(C) Per-universe Enhanced model portfolio — SP1500 and RU3K:**
+**Key findings across all three universes:**
 
-The `per-univ-port` cell in `01_analysis.ipynb` evaluates the same walk-forward Enhanced Ridge and LightGBM predictions filtered to each universe. Key findings from that cell:
-
-- **SP500** (Table B above): Ridge underperforms the baseline (+0.30 vs +0.60). Per-fold sparse selection with ~2,000 events/quarter introduces ranking noise that outweighs signal gain.
-- **SP1500** (~79,000 events across the walk-forward window, ~3,300/quarter): Larger fold size stabilises feature selection. Ridge improves on the ATC baseline; the all-universe Ridge gain (+0.83 vs +0.75) is primarily driven by SP1500 and RU3K performance.
-- **RU3K** (~120,000 events, ~5,000/quarter): Largest folds; per-fold feature rankings are most stable. Ridge and LightGBM are expected to show the largest absolute improvement over the ATC baseline within this universe.
-
-The `per-univ-port` notebook cell provides exact Sharpe, Max DD, and bps/month for SP1500-only and RU3K-only after running `01_analysis.ipynb` end-to-end.
-
-**The raw ATC baseline is the strongest SP500 portfolio (+0.60 Sharpe, +59.2 bps/month).** All ML models underperform the raw signal for SP500 in the look-ahead-free evaluation. The key reason is per-fold sparse feature selection variance: with only ~2,000 SP500 test events per quarter, the 30-feature IC-ranked subset shifts substantially fold-to-fold, introducing ranking noise that outweighs the information gain from the sparse cells.
-
-In the all-universe comparison, Enhanced Ridge (+0.83) provides the most reliable ML improvement over the ATC baseline (+0.75). Ridge's lower IC variance — not its mean IC — drives this: consistent quarterly rankings translate more reliably to cumulative portfolio returns than higher-variance tree-based predictions. Practitioners deploying on SP500 should use the raw ATC signal; Ridge enhancement adds value at SP1500/RU3K scale where larger per-fold sample sizes stabilise the feature set.
+- **ATC baseline is the strongest per-universe portfolio in every universe** (SP500 +0.59, SP1500 +0.18, RU3K +0.98). Ridge is within 0.09–0.10 Sharpe of the baseline for SP500 and RU3K, but essentially tied with baseline for SP1500.
+- **SP1500 LightGBM is sharply negative (−0.43 Sharpe, −34.3 bps/month)**, driven by COVID-era tree collapse: LGB fires early stopping at 1–2 trees for multiple SP1500 folds where 20d returns are pure noise, generating unstable predictions. The SP1500 universe has larger per-fold sample but also more small-cap earnings events with noisy 20d returns.
+- **RU3K benefits most from the signal** in absolute terms (ATC baseline +0.98, Ridge +0.89), driven by wider return dispersion and less analyst saturation. Ridge preserves most of that alpha (+0.89 vs +0.98).
+- **All-universe Ridge (+0.83) exceeds all-universe baseline (+0.75)** because cross-universe pooling creates a ranking where Ridge's consistent SP500/RU3K scores dominate the extreme quintiles. Per-universe ranking neutralises this effect, so per-universe Ridge trails baseline in all three.
+- **The recommended production model remains the raw ATC signal** for any single-universe deployment; Enhanced Ridge adds value only in the cross-universe pooled ranking (all-universe Sharpe +0.83 vs +0.75).
 
 ![Walk-forward portfolio equity curves — ATC Baseline, Ridge, LightGBM (monthly quintile L/S, 20 bps TC, all universes).](output/wf_portfolio_comparison.png)
 
