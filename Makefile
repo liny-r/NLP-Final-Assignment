@@ -14,7 +14,7 @@ PANDOC_FLAGS  = --pdf-engine=$(PDF_ENGINE) -V geometry:margin=1in -V fontsize=11
 
 .PHONY: all data analysis tests report charts clean
 
-all: tests report charts
+all: data analysis tests report charts
 
 ## ── Step 1: data pipeline ─────────────────────────────────────────────────
 data/events_with_returns.parquet: 00_data_prep.ipynb

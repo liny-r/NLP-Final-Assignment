@@ -32,7 +32,7 @@ header-includes: |
 
 # Abstract
 
-We present a rigorous, look-ahead-free backtest of the ProntoNLP Earnings-Call ATC signal across 376,790 events (2010–2026) and three equity universes (S&P 500, S&P 1500, Russell 3000). All ten look-ahead audit items pass. The ATCClassifierScore achieves Spearman IC of +0.039–0.049 (SP500, 10–20d). Monthly quintile L/S portfolios deliver net Sharpe of 0.73 / 0.87 / 1.51 after 20 bps round-trip TC; monthly is the only cadence positive across all universes (SP500 daily net Sharpe −0.03). An expanding walk-forward over 34 quarters (2018Q1–2026Q2) tests Ridge, LightGBM, and XGBoost on 772 engineered Aspect × Theme cross-product features augmented with 30 per-fold IC-selected raw AspectTheme cells. **Combo LightGBM achieves IC IR +1.14 (p=0.002); Enhanced Ridge delivers all-universe portfolio Sharpe +0.83 vs. ATC baseline +0.75.** For SP500, the raw ATC signal (+0.60 Sharpe, +59 bps/month) outperforms all ML models — per-fold feature selection variance dominates at small per-fold sample sizes. The 2-quarter ATC trend (`ATCClassifierScore_2q`) is the strongest individual feature (IC_5d = +0.047). Break-even TC is ~20 bps one-way. Key risk: post-COVID signal decay (10d IC +0.063 → +0.008), with ML providing no additional resilience at the 20d horizon.
+We present a rigorous, look-ahead-free backtest of the ProntoNLP Earnings-Call ATC signal across 376,790 events (2010–2026) and three equity universes (S&P 500, S&P 1500, Russell 3000). All ten look-ahead audit items pass. The ATCClassifierScore achieves Spearman IC of +0.039–0.049 (SP500, 10–20d). Monthly quintile L/S portfolios deliver net Sharpe of 0.73 / 0.87 / 1.51 after 20 bps round-trip TC; monthly is the only cadence positive across all universes (SP500 daily net Sharpe −0.03). An expanding walk-forward over 34 quarters (2018Q1–2026Q2) tests Ridge, LightGBM, and XGBoost on 772 engineered Aspect × Theme cross-product features augmented with 30 per-fold IC-selected raw AspectTheme cells. **Combo LightGBM achieves IC IR +1.14 (p=0.002); Enhanced Ridge delivers all-universe portfolio Sharpe +0.83 vs. ATC baseline +0.75.** For SP500, the raw ATC signal (+0.60 Sharpe, +59 bps/month) outperforms all ML models — per-fold feature selection variance dominates at small per-fold sample sizes. The 2-quarter ATC trend (`ATCClassifierScore_2q`) is the strongest individual feature (IC_5d = +0.047). Break-even TC is ~20 bps one-way. Key risk: post-COVID signal decay (10d IC +0.052 → +0.008), with ML providing no additional resilience at the 20d horizon.
 
 
 
@@ -655,7 +655,7 @@ The strategy **breaks even near 20 bps one-way** (≈ 80 bps round-trip for a 4-
 
 **TC assumption.** Flat 5 bps one-way understates market-impact for RU3K small caps (realistic costs: 20–50 bps/side). The monthly quintile strategy breaks even at ~20 bps one-way (§5.6A); the 5 bps assumption leaves a 15 bps margin. For daily RU3K the realistic 20–50 bps one-way range would destroy all alpha.
 
-**Regime dependence.** Post-COVID IC (+0.008 at 10d, +0.029 at 20d) has collapsed relative to pre-COVID (+0.063 at 10d). The ML layer partially recovers the signal; rolling IC monitoring is essential.
+**Regime dependence.** Post-COVID IC (+0.008 at 10d; +0.029 at 20d) has collapsed relative to pre-COVID (+0.052 at 10d; +0.073 at 20d). ML provides no additional resilience post-COVID (§5.3c); rolling IC monitoring is essential.
 
 
 # 8. Future Work

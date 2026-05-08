@@ -25,12 +25,12 @@ FIGURES = [
 
     ("quintile_equity_curves.png",
      "§2a  Quintile Portfolio — Long / Short / L/S Equity Curves",
-     "Monthly quintile L/S equity curves (10d holding, 5 bps one-way TC). Net Sharpe:\n"
-     "SP500 +0.45, SP1500 +0.74, RU3K +1.28."),
+     "Monthly quintile L/S equity curves (20d holding, 5 bps one-way TC). Net Sharpe:\n"
+     "SP500 +0.73, SP1500 +0.87, RU3K +1.51."),
 
     ("decile_drawdown_rolling_sharpe.png",
      "§2b  Decile Portfolio — Cumulative Return, Drawdown, Rolling Sharpe",
-     "Top decile long / bottom decile short (D10−D1), monthly, 10d return, net of TC.\n"
+     "Top decile long / bottom decile short (D10−D1), monthly, 20d return, net of TC.\n"
      "Rolling 12-month Sharpe and drawdown shown per universe."),
 
     ("decile_spread_heatmap.png",
@@ -76,18 +76,18 @@ FIGURES = [
 
     ("walkforward_baseline_ic.png",
      "§2e  Walk-Forward Baseline IC (ATCClassifierScore, no model)",
-     "Quarterly out-of-sample Spearman IC, 2018Q1–2026Q2. Mean IC +0.031 (All universes),\n"
-     "IR +1.12. Visible post-COVID decay."),
+     "Quarterly out-of-sample Spearman IC, 2018Q1–2026Q2. Mean IC +0.030 (All universes),\n"
+     "IR +1.09. Visible post-COVID decay from 2023 onward."),
 
     ("wf_portfolio_comparison.png",
      "§4b  Walk-Forward Portfolio — ATC Baseline vs. Ridge vs. LightGBM",
      "Monthly quintile L/S equity curves from OOS walk-forward predictions (all universes,\n"
-     "20 bps round-trip TC). Ridge IR +1.96 outperforms LightGBM IR +1.64 on portfolio Sharpe."),
+     "20 bps round-trip TC). Net Sharpe: Ridge +0.83, ATC Baseline +0.75, LightGBM +0.63."),
 
     ("wf_subperiod_ir.png",
      "§4d  Walk-Forward IC — Sub-Period Breakdown",
      "Information ratio by sub-period (Pre-COVID, COVID era, Post-COVID) for each model tier.\n"
-     "ML models partially recover the signal decay visible in the raw ATC baseline."),
+     "Post-COVID all models converge to IR +0.51–0.65; ML provides no additional resilience."),
 
     ("feature_importance.png",
      "§4c  LightGBM Feature Importance (Last Walk-Forward Quarter)",
@@ -98,11 +98,11 @@ FIGURES = [
     ("stretch_portfolio_comparison.png",
      "§3d  Portfolio Comparison — All Tiers (SP500, Monthly)",
      "OOS monthly quintile L/S equity curves: ATC Baseline, Enhanced Ridge/LGB,\n"
-     "Combo Ridge/LGB, Combo XGBoost. XGBoost net Sharpe +0.76 dominates all others."),
+     "Combo Ridge/LGB, Combo XGBoost. ATC Baseline (+0.60 Sharpe) is the strongest SP500 portfolio."),
 
     ("stretch_feature_importance.png",
      "§3  Combo XGBoost Feature Importance",
-     "Top features in the Combo XGBoost model (772 engineered + 13 Lasso-selected sparse).\n"
+     "Top features in the Combo XGBoost model (772 engineered + 30 per-fold IC-selected sparse).\n"
      "Sparse AspectTheme cells concentrated in positive FinPerf and CapAlloc language."),
 
     # ── Robustness ────────────────────────────────────────────────────────
@@ -113,13 +113,13 @@ FIGURES = [
 
     ("parameter_sensitivity.png",
      "§5.6  Parameter Sensitivity — TC Level / Bucket Count / Return Horizon",
-     "(A) Break-even near 8 bps one-way. (B) Octile (8 buckets) is empirically optimal.\n"
+     "(A) Break-even near ~20 bps one-way. (B) Quintile (5 buckets) near-optimal; octile adds no improvement.\n"
      "(C) 20d holding period maximises net Sharpe (+0.73 vs +0.45 at 10d)."),
 
     ("walkforward_ic.png",
      "§5.3  Walk-Forward IC Summary — All Model Tiers",
-     "Quarterly OOS IC for all 7 model variants (2018Q1–2026Q2). Combo XGBoost IR +2.27\n"
-     "is the highest; ATC baseline IR +1.12 serves as the benchmark floor."),
+     "Quarterly OOS IC for all 7 model variants (2018Q1–2026Q2). Combo LightGBM IR +1.14\n"
+     "is the leading ML model; ATC baseline IR +1.09 serves as the benchmark floor."),
 ]
 
 def make_charts_pdf(figures, output_path):

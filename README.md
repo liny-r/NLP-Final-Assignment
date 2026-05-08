@@ -24,7 +24,7 @@ A rigorous, look-ahead-free backtest of the ProntoNLP Earnings-Call ATC (Aspect-
 │   ├── look_ahead_audit.md     # §3 look-ahead bias checklist (required deliverable)
 │   ├── research_report.md      # Full research write-up (source for PDF)
 │   ├── research_report.pdf     # Compiled report
-│   ├── backtest_charts.pdf     # All 24 figures bundled
+│   ├── backtest_charts.pdf     # All 21 figures bundled
 │   └── output/                 # 24 PNG figures (committed, regenerable)
 ├── data/
 │   └── universes.json          # SP500 / SP1500 / RU3K ticker lists (committed)
@@ -118,5 +118,5 @@ All three universes use **current composition** (no point-in-time constituent da
 | Formal look-ahead bias tests (8 programmatic tests T1–T8) | ✅ Complete | `02_lookahead_tests.ipynb` |
 | Analysis notebook | ✅ Complete | `01_analysis.ipynb` |
 | Research PDF (with embedded figures) | ✅ Complete | `reports/research_report.pdf` |
-| Backtest charts (24 figures) | ✅ Complete | `reports/output/` + `reports/backtest_charts.pdf` |
+| Backtest charts (21 figures) | ✅ Complete | `reports/output/` + `reports/backtest_charts.pdf` |
 | One-command reproducibility | ✅ Complete | `Makefile` — run `make all` |
