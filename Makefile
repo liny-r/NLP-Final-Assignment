@@ -12,9 +12,9 @@ PDF_ENGINE    = xelatex
 PANDOC_FLAGS  = --pdf-engine=$(PDF_ENGINE) -V geometry:margin=1in -V fontsize=11pt \
                 -V "mainfont=STIX Two Text" -V "mathfont=STIX Two Math"
 
-.PHONY: all data analysis tests report clean
+.PHONY: all data analysis tests report charts clean
 
-all: report
+all: report charts
 
 ## ── Step 1: data pipeline ─────────────────────────────────────────────────
 data/events_with_returns.parquet: 00_data_prep.ipynb
@@ -41,6 +41,12 @@ reports/research_report.pdf: reports/research_report.md results/walkforward_ic.p
 		$(PANDOC_FLAGS)
 
 report: reports/research_report.pdf
+
+## ── Step 5: backtest charts PDF ───────────────────────────────────────────
+reports/backtest_charts.pdf: build_charts_pdf.py results/walkforward_ic.png
+	$(PYTHON) build_charts_pdf.py
+
+charts: reports/backtest_charts.pdf
 
 ## ── Clean generated artefacts (keeps raw CSV and Parquet inputs) ──────────
 clean:
