@@ -114,7 +114,7 @@ All three universes use **current composition** (no point-in-time constituent da
 |------|--------|----------|
 | Data pipeline | ✅ Complete | `00_data_prep.ipynb` |
 | Look-ahead audit checklist | ✅ Complete | `reports/look_ahead_audit.md` |
-| Formal look-ahead bias tests (5 tests) | ✅ Complete | `02_lookahead_tests.ipynb` |
+| Formal look-ahead bias tests (8 tests) | ✅ Complete | `02_lookahead_tests.ipynb` |
 | Analysis notebook | ✅ Complete | `01_analysis.ipynb` |
 | Research PDF (with embedded figures) | ✅ Complete | `reports/research_report.pdf` |
 | Backtest charts (24 figures) | ✅ Complete | `reports/output/` + `reports/backtest_charts.pdf` |

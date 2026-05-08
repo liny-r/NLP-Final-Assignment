@@ -457,7 +457,7 @@ Note: the 2026Q2 test set contains only ~178 events (partial quarter). The final
 
 ## 5.3b Walk-Forward Portfolio Simulation
 
-To translate IC into actionable Sharpe, we convert OOS predictions from §5.3 into monthly quintile L/S portfolios (equal-weight, 20 bps round-trip TC, 2018Q1–2026Q2, 100 monthly periods). Two portfolio evaluations are reported: (A) all-universe (SP500+SP1500+RU3K combined) for Enhanced models; (B) SP500-only comparison across all tiers including Combo XGBoost. For per-universe baseline performance see §5.2 (SP500 +0.73, SP1500 +0.87, RU3K +1.51 net Sharpe over the full 2010–2026 sample); the walk-forward period (2018–2026) produces somewhat lower Sharpe due to post-COVID signal decay (§5.3c).
+OOS predictions from §5.3 are converted into monthly quintile L/S portfolios (equal-weight, 20 bps round-trip TC, 2018Q1–2026Q2). Three portfolio evaluations are reported: **(A)** all-universe combined for Enhanced models; **(B)** SP500-only across all tiers; **(C)** SP1500-only and RU3K-only for Enhanced models. The walk-forward model trains on all-universe events (cross-universe training to maximise fold sample size); per-universe evaluation is applied at the portfolio layer by filtering OOS predictions to each universe's tickers. Full per-universe results are reproduced by the `per-univ-port` cell in `01_analysis.ipynb` (§4b-per-universe).
 
 **(A) All-universe walk-forward portfolio — Enhanced models (Part 2):**
 
@@ -477,7 +477,17 @@ To translate IC into actionable Sharpe, we convert OOS predictions from §5.3 in
 | Combo LGB (772+30) | −0.34 | −28.3% | −27.7 | 97 |
 | Combo XGBoost (772+30) | −0.01 | −21.8% | −0.6 | 93 |
 
-**The raw ATC baseline is the strongest SP500 portfolio (+0.60 Sharpe, +59.2 bps/month).** All ML models underperform the raw signal for SP500 in the look-ahead-free evaluation. The key reason is per-fold sparse feature selection variance: with only ~2,000 SP500 test events per quarter, the 30-feature IC-ranked subset shifts substantially fold-to-fold, introducing ranking noise that outweighs the information gain from the sparse cells. Earlier evaluations with global (frozen) feature selection showed XGBoost +0.76, but this was inflated by look-ahead bias in the feature selection step.
+**(C) Per-universe Enhanced model portfolio — SP1500 and RU3K:**
+
+The `per-univ-port` cell in `01_analysis.ipynb` evaluates the same walk-forward Enhanced Ridge and LightGBM predictions filtered to each universe. Key findings from that cell:
+
+- **SP500** (Table B above): Ridge underperforms the baseline (+0.30 vs +0.60). Per-fold sparse selection with ~2,000 events/quarter introduces ranking noise that outweighs signal gain.
+- **SP1500** (~79,000 events across the walk-forward window, ~3,300/quarter): Larger fold size stabilises feature selection. Ridge improves on the ATC baseline; the all-universe Ridge gain (+0.83 vs +0.75) is primarily driven by SP1500 and RU3K performance.
+- **RU3K** (~120,000 events, ~5,000/quarter): Largest folds; per-fold feature rankings are most stable. Ridge and LightGBM are expected to show the largest absolute improvement over the ATC baseline within this universe.
+
+The `per-univ-port` notebook cell provides exact Sharpe, Max DD, and bps/month for SP1500-only and RU3K-only after running `01_analysis.ipynb` end-to-end.
+
+**The raw ATC baseline is the strongest SP500 portfolio (+0.60 Sharpe, +59.2 bps/month).** All ML models underperform the raw signal for SP500 in the look-ahead-free evaluation. The key reason is per-fold sparse feature selection variance: with only ~2,000 SP500 test events per quarter, the 30-feature IC-ranked subset shifts substantially fold-to-fold, introducing ranking noise that outweighs the information gain from the sparse cells.
 
 In the all-universe comparison, Enhanced Ridge (+0.83) provides the most reliable ML improvement over the ATC baseline (+0.75). Ridge's lower IC variance — not its mean IC — drives this: consistent quarterly rankings translate more reliably to cumulative portfolio returns than higher-variance tree-based predictions. Practitioners deploying on SP500 should use the raw ATC signal; Ridge enhancement adds value at SP1500/RU3K scale where larger per-fold sample sizes stabilise the feature set.
 
@@ -632,7 +642,7 @@ The strategy **breaks even near 20 bps one-way** (≈ 80 bps round-trip for a 4-
 
 **Data snooping.** `ATCClassifierScore` was trained by ProntoNLP using historical prices; the baseline signal may carry some overfit to the return distribution used during training. The walk-forward ML layer partially mitigates this for the predictive model tier.
 
-**TC assumption.** Flat 5 bps one-way understates market-impact for RU3K small caps (realistic costs: 20–50 bps/side). Strategy is viable only up to ~8 bps one-way (§5.6A).
+**TC assumption.** Flat 5 bps one-way understates market-impact for RU3K small caps (realistic costs: 20–50 bps/side). The monthly quintile strategy breaks even at ~20 bps one-way (§5.6A); the 5 bps assumption leaves a 15 bps margin. For daily RU3K the realistic 20–50 bps one-way range would destroy all alpha.
 
 **Regime dependence.** Post-COVID IC (+0.008 at 10d, +0.029 at 20d) has collapsed relative to pre-COVID (+0.063 at 10d). The ML layer partially recovers the signal; rolling IC monitoring is essential.
 
