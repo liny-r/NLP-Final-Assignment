@@ -113,7 +113,6 @@ All three universes use **current composition** (no point-in-time constituent da
 | Item | Status | Location |
 |------|--------|----------|
 | Data pipeline | ✅ Complete | `00_data_prep.ipynb` |
-| Look-ahead audit checklist | ✅ Complete | `reports/look_ahead_audit.md` |
 | Look-ahead bias audit (10-item checklist §3.1–§3.10, signed) | ✅ Complete | `reports/look_ahead_audit.md` |
 | Formal look-ahead bias tests (8 programmatic tests T1–T8) | ✅ Complete | `02_lookahead_tests.ipynb` |
 | Analysis notebook | ✅ Complete | `01_analysis.ipynb` |

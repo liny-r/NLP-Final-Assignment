@@ -403,7 +403,7 @@ Quintile L/S performance at three rebalancing frequencies. Each cadence uses the
 
 - **Drawdown control:** Monthly rebalancing reduces SP500 max DD from −58% to −12% by aggregating independent quarterly earnings events rather than stacking intra-week correlated trades.
 
-The alpha decay chart (`reports/output/alpha_decay.png`) shows IC increasing monotonically from 1d to 20d across all three universes.
+![Alpha decay — Spearman IC of ATCClassifierScore vs. return horizon (1, 3, 5, 10, 20d), all universes. IC increases monotonically, supporting the 20d primary holding period.](output/alpha_decay.png)
 
 ![Cadence comparison — quintile L/S cumulative equity curves (all universes × cadences). Monthly is the robust primary cadence; daily is TC-destroyed for SP500 and carries high drawdown risk for SP1500/RU3K.](output/cadence_comparison.png)
 
@@ -453,7 +453,11 @@ Expanding-window quarterly walk-forward, 2018Q1–2026Q2 (34 steps). Training on
 
 Note: the 2026Q2 test set contains only ~178 events (partial quarter). The final-quarter IC is unreliable and should not be cited in isolation. Sparse feature selection uses IC top-30 per fold (re-ranked on each fold's training data, no look-ahead). ElasticNet was tested but excluded: Sparse ElasticNet IR +1.32, Combo ElasticNet IR +1.83 — no material improvement over their Ridge counterparts.
 
-![Walk-forward IC per quarter — ATCClassifierScore, Ridge, LightGBM enhanced, LightGBM stretch — and cumulative IC (2018Q1–2026Q2). LightGBM (enhanced) dominates cumulatively.](output/walkforward_ic.png)
+![Walk-forward baseline IC (ATCClassifierScore, no model) — quarterly OOS Spearman IC, 2018Q1–2026Q2. Mean IC +0.030, IR +1.09; post-COVID decay visible from 2023 onward.](output/walkforward_baseline_ic.png)
+
+![Walk-forward IC per quarter — ATCClassifierScore, Ridge, LightGBM enhanced, LightGBM stretch — and cumulative IC (2018Q1–2026Q2). Combo LightGBM (IR +1.14) leads; ATC baseline (IR +1.09) is second.](output/walkforward_ic.png)
+
+![LightGBM feature importance (final walk-forward quarter) — top features by gain. ATCClassifierScore trend variants (2q, YoY) dominate; Forecast×FinPerf and Surprise×Macro cross-products are the top sparse contributors.](output/feature_importance.png)
 
 ## 5.3b Walk-Forward Portfolio Simulation
 
@@ -568,7 +572,7 @@ The **Total slice dominates all speaker-specific cuts by 2–5×**. CEO, CFO, an
 
 **The ML models do not offset this decay.** As shown in §5.3c, post-COVID all three models converge to near-identical IR: ATC Baseline +0.65, Ridge +0.65, LightGBM +0.51. The ML layer offers no additional resilience in the post-2022 regime — signal decay affects engineered features and the raw classifier equally. Rolling IC monitoring (§6) is therefore essential to detect further deterioration early.
 
-**Sector-neutral IC (S&P 500):**
+## 5.5b Sector-Neutral IC
 
 | Signal | IC_1d | IC_5d | IC_20d |
 |--------|-------|-------|--------|
@@ -576,8 +580,6 @@ The **Total slice dominates all speaker-specific cuts by 2–5×**. CEO, CFO, an
 | Sector-neutral ATC | +0.043 | +0.037 | +0.043 |
 
 Sector neutralization modestly reduces IC at 5d and 20d (from +0.044 → +0.037) but is roughly comparable at 1d. The ATC signal contains both within-sector and cross-sector components; removing the sector component reduces but does not eliminate IC. 84% of the 5d signal (0.037/0.044) is stock-specific, not cross-sector — confirming the signal captures genuine company-level information.
-
-![IC by GICS sector — 5d horizon, all three universes. All sectors show positive IC across all universes.](output/ic_by_sector.png)
 
 ## 5.5c Market-Cap Bucket Robustness
 
