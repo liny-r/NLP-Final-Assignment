@@ -141,3 +141,14 @@ Reported alpha should be treated as an **upper bound**.
 | 3.10 | Hyperparameter tuning | ✅ PASS |
 
 **All 10 look-ahead audit items: PASS**
+
+
+---
+
+## Sign-Off
+
+I certify that all 10 look-ahead audit items above have been reviewed and pass. The backtest implementation in `00_data_prep.ipynb` and `01_analysis.ipynb` contains no look-ahead bias that I am aware of, and the formal bias tests in `02_lookahead_tests.ipynb` (T1–T8) all pass programmatically.
+
+**Signed:** Yueqi Lin  
+**Date:** May 2026  
+**Course:** LLM-Driven Quant Research — Final Assignment

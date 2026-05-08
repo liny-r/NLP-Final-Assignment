@@ -17,7 +17,7 @@ A rigorous, look-ahead-free backtest of the ProntoNLP Earnings-Call ATC (Aspect-
 ```
 ├── 00_data_prep.ipynb          # Data pipeline: CSV → Parquet → features → returns
 ├── 01_analysis.ipynb           # IC, portfolios, walk-forward models, robustness
-├── 02_lookahead_tests.ipynb    # 8 formal look-ahead bias tests (all pass)
+├── 02_lookahead_tests.ipynb    # 8 programmatic look-ahead bias tests T1–T8 (all pass)
 ├── Makefile                    # One-command reproduce: make all
 ├── build_charts_pdf.py         # Bundles reports/output/*.png into PDF
 ├── reports/
@@ -114,7 +114,8 @@ All three universes use **current composition** (no point-in-time constituent da
 |------|--------|----------|
 | Data pipeline | ✅ Complete | `00_data_prep.ipynb` |
 | Look-ahead audit checklist | ✅ Complete | `reports/look_ahead_audit.md` |
-| Formal look-ahead bias tests (8 tests) | ✅ Complete | `02_lookahead_tests.ipynb` |
+| Look-ahead bias audit (10-item checklist §3.1–§3.10, signed) | ✅ Complete | `reports/look_ahead_audit.md` |
+| Formal look-ahead bias tests (8 programmatic tests T1–T8) | ✅ Complete | `02_lookahead_tests.ipynb` |
 | Analysis notebook | ✅ Complete | `01_analysis.ipynb` |
 | Research PDF (with embedded figures) | ✅ Complete | `reports/research_report.pdf` |
 | Backtest charts (24 figures) | ✅ Complete | `reports/output/` + `reports/backtest_charts.pdf` |
