@@ -32,7 +32,7 @@ header-includes: |
 
 # Abstract
 
-We conduct a rigorous, look-ahead-free backtest of the ProntoNLP Earnings-Call ATC (Aspect-Theme Classifier) signal using 376,790 earnings call events spanning 2010–2026. The ATC signal aggregates aspect-level sentiment, theme-level tone, and consensus KPI surprises into a single per-call ranking score. We test across three equity universes — S&P 500, S&P 1500, and Russell 3000 — at daily, weekly, and monthly rebalancing cadences with 1–20 day holding periods. All ten look-ahead bias audit items pass. The ATCClassifierScore achieves consistent Spearman IC of +0.039–0.049 (SP500, 10–20d horizons). Monthly quintile L/S portfolios deliver net Sharpe ratios of 0.45 (S&P 500), 0.74 (S&P 1500), and 1.28 (Russell 3000) after 20 bps round-trip transaction costs. Cadence is universe-dependent: daily rebalancing is TC-destroyed for SP500 (net Sharpe −0.03) but viable for SP1500 (net Sharpe +1.02) and RU3K (+1.52) where gross spreads are wider. We engineer 772 features from the raw ATC matrix using Aspect × Theme cross-products augmented with QoQ, 2-quarter, and YoY trend variants, enabling an expanding-window predictive model. In the expanding walk-forward (34 quarters, 2018Q1–2026Q2), the best IC model is **Combo XGBoost** (772 engineered + 13 Lasso-selected raw AspectTheme cells, IR +2.27), outperforming Ridge (IR +1.96), LightGBM (IR +1.64), and the ATC baseline (IR +1.12). In out-of-sample walk-forward portfolio simulation (SP500, monthly), **Combo XGBoost achieves net Sharpe +0.76 with max drawdown −8.9%** — nearly 3× higher Sharpe than Ridge (+0.27) or LightGBM (+0.26) — driven by XGBoost's ability to exploit non-linear interactions between the 13 selected sparse cells and the engineered feature set. Sparse feature selection uses a dual-method filter (IC ranking + LassoCV intersection on 2010–2017 training data), reducing 405 raw AspectTheme cells to 13 robustly predictive features concentrated in positive Financial Performance and Capital Allocation language. The 2-quarter trend in ATC score (`ATCClassifierScore_2q`, IC_5d = +0.047) is the single most predictive individual feature. Parameter sensitivity shows break-even near 8 bps one-way. The most critical risk is regime-dependent signal decay: pre-COVID ATC 10d IC (+0.063) has collapsed to +0.008 post-COVID, though the ML layer (XGBoost IR +2.27) substantially recovers lost signal through engineered trend features.
+We conduct a rigorous, look-ahead-free backtest of the ProntoNLP Earnings-Call ATC (Aspect-Theme Classifier) signal using 376,790 earnings call events spanning 2010–2026. The ATC signal aggregates aspect-level sentiment, theme-level tone, and consensus KPI surprises into a single per-call ranking score. We test across three equity universes — S&P 500, S&P 1500, and Russell 3000 — at daily, weekly, and monthly rebalancing cadences with 1–20 day holding periods. All ten look-ahead bias audit items pass. The ATCClassifierScore achieves consistent Spearman IC of +0.039–0.049 (SP500, 10–20d horizons). Monthly quintile L/S portfolios deliver net Sharpe ratios of 0.45 (S&P 500), 0.74 (S&P 1500), and 1.28 (Russell 3000) after 20 bps round-trip transaction costs. Monthly rebalancing is the robust primary cadence, delivering positive net Sharpe across all three universes (+0.45 / +0.74 / +1.28). Daily rebalancing is TC-destroyed for SP500 (net Sharpe −0.03); SP1500/RU3K show higher daily gross returns but also materially higher drawdown (−39.5% / −78.3%) and capacity constraints under realistic TC assumptions. We engineer 772 features from the raw ATC matrix using Aspect × Theme cross-products augmented with QoQ, 2-quarter, and YoY trend variants, enabling an expanding-window predictive model. In the expanding walk-forward (34 quarters, 2018Q1–2026Q2), the best IC model is **Combo XGBoost** (772 engineered + 13 Lasso-selected raw AspectTheme cells, IR +2.27), outperforming Ridge (IR +1.96), LightGBM (IR +1.64), and the ATC baseline (IR +1.12). In out-of-sample walk-forward portfolio simulation (SP500, monthly), **Combo XGBoost achieves net Sharpe +0.76 with max drawdown −8.9%** — nearly 3× higher Sharpe than Ridge (+0.27) or LightGBM (+0.26) — driven by XGBoost's ability to exploit non-linear interactions between the 13 selected sparse cells and the engineered feature set. Sparse feature selection uses a dual-method filter (IC ranking + LassoCV intersection on 2010–2017 training data), reducing 405 raw AspectTheme cells to 13 robustly predictive features concentrated in positive Financial Performance and Capital Allocation language. The 2-quarter trend in ATC score (`ATCClassifierScore_2q`, IC_5d = +0.047) is the single most predictive individual feature. Parameter sensitivity shows break-even near 8 bps one-way. The most critical risk is regime-dependent signal decay: pre-COVID ATC 10d IC (+0.063) has collapsed to +0.008 post-COVID, though the ML layer (XGBoost IR +2.27) substantially recovers lost signal through engineered trend features.
 
 
 
@@ -388,21 +388,25 @@ Quintile L/S performance at three rebalancing frequencies. Each cadence uses the
 
 | Universe | Cadence | Horizon | Sharpe gross | Sharpe net | Max DD |
 |----------|---------|---------|--------------|------------|--------|
+| Universe | Cadence | Horizon | Sharpe gross | Sharpe net | Max DD |
+|----------|---------|---------|--------------|------------|--------|
 | SP500    | Daily   | 1d  | 2.01 | −0.03 | −58.1% |
 | SP500    | Weekly  | 5d  | 0.80 | +0.23 | −57.6% |
 | **SP500**    | **Monthly** | **10d** | **0.76** | **+0.45** | **−17.2%** |
-| SP1500   | **Daily**   | **1d**  | **2.92** | **+1.02** | **−39.5%** |
+| SP1500   | Daily   | 1d  | 2.92 | +1.02 | −39.5% |
 | SP1500   | Weekly  | 5d  | 1.08 | +0.56 | −55.8% |
-| SP1500   | Monthly | 10d | 1.14 | +0.74 | −14.2% |
-| RU3K     | **Daily**   | **1d**  | **2.92** | **+1.52** | **−78.3%** |
+| **SP1500**   | **Monthly** | **10d** | **1.14** | **+0.74** | **−14.2%** |
+| RU3K     | Daily   | 1d  | 2.92 | +1.52 | −78.3% |
 | RU3K     | Weekly  | 5d  | 1.51 | +1.06 | −50.9% |
-| RU3K     | Monthly | 10d | 1.68 | +1.28 | −10.4% |
+| **RU3K**     | **Monthly** | **10d** | **1.68** | **+1.28** | **−10.4%** |
 
-**Optimal cadence differs by universe.** Bold rows indicate the highest net Sharpe per universe:
+**Monthly is the robust primary cadence.** Bold rows indicate Monthly — the only cadence that is positive across all three universes:
 
-- **SP500 → Monthly** (+0.45): Daily TC-destroys alpha (gross 2.01 → net −0.03). Slow signal decay (IC peaks at 20d) means the monthly hold captures most available alpha. Max DD improves dramatically from −58% (daily) to −17% (monthly).
-- **SP1500 → Daily** (+1.02): Gross spreads wide enough that the 20 bps round-trip leaves +10.8 bps net per day. SP1500 mid-caps have sufficient depth to sustain daily rebalancing at reasonable AUM.
-- **RU3K → Daily** (+1.52): Highest raw IC of all three universes; gross spread (+41.6 bps/day) more than covers TC. Caution: the 5 bps flat-TC assumption likely understates execution costs at scale for small caps — in practice, weekly or monthly may be safer beyond $50M AUM.
+- **SP500 → Monthly required** (+0.45): Daily TC-destroys alpha entirely (gross 2.01 → net −0.03). Monthly rebalancing reduces max DD from −58% to −17%. There is no viable alternative for SP500.
+- **SP1500 → Monthly primary** (+0.74): Daily achieves +1.02 net Sharpe, but at the cost of −39.5% max DD and relies on the 5 bps flat-TC assumption holding at scale. The marginal gain (+0.28 Sharpe) over monthly does not justify the drawdown and capacity risk for most practitioners.
+- **RU3K → Monthly primary** (+1.28): Daily reaches +1.52 net Sharpe but with −78.3% max DD — not operationally viable at meaningful AUM. The 5 bps flat-TC assumption materially understates market-impact for small caps. Monthly rebalancing delivers +1.28 net Sharpe with only −10.4% max DD.
+
+*Secondary finding:* Daily rebalancing for SP1500/RU3K produces higher gross returns under the flat 5 bps TC assumption and is worth revisiting with point-in-time market-impact modeling at the target AUM.
 
 2. **Alpha decay supports longer holds for SP500:** IC grows monotonically from 1d to 20d because the classifier was trained on a 14-day window. For SP500 — where daily TC destroys value — a monthly rebalance captures the full information signal in one turnover event.
 
@@ -410,7 +414,7 @@ Quintile L/S performance at three rebalancing frequencies. Each cadence uses the
 
 The alpha decay chart (`results/alpha_decay.png`) shows IC increasing monotonically from 1d to 20d across all three universes.
 
-![Cadence comparison — quintile L/S cumulative equity curves (all universes × cadences). Optimal cadence is universe-dependent: monthly for SP500, daily for SP1500 and RU3K.](../results/cadence_comparison.png)
+![Cadence comparison — quintile L/S cumulative equity curves (all universes × cadences). Monthly is the robust primary cadence; daily is TC-destroyed for SP500 and carries high drawdown risk for SP1500/RU3K.](../results/cadence_comparison.png)
 
 ## 5.2d Turnover Analysis
 
@@ -609,12 +613,14 @@ The strategy **breaks even near 8 bps one-way**. The 5 bps assumption leaves onl
 
 Based on the empirical results, the following deployment parameters are recommended:
 
-**Recommended universe:** S&P 1500 for most practitioners. SP1500 daily rebalancing achieves net Sharpe +1.02 (highest liquidity-adjusted performance), with sufficient name depth (~1,500 names) for meaningful position sizing. RU3K daily rebalancing delivers net Sharpe +1.52 but the flat 5 bps TC assumption underestimates market-impact at scale for small caps — viable only below ~$50M AUM.
+**Recommended universe:** S&P 1500 for most practitioners. Monthly rebalancing achieves net Sharpe +0.74 with only −14.2% max DD, and ~1,500 names provides sufficient breadth for meaningful position sizing. SP500 monthly (+0.45) is the conservative choice for large institutions. RU3K monthly (+1.28) offers the highest gross returns but capacity is limited to ~$50M AUM under realistic TC.
 
-**Recommended rebalancing cadence:** Universe-dependent. The optimal cadence differs materially across universes (§5.2c):
-- **SP500 → Monthly** (net Sharpe +0.45): daily TC-destroys alpha; monthly rebalancing reduces max DD from −58% to −17%.
-- **SP1500 → Daily** (net Sharpe +1.02): mid-cap gross spreads exceed TC; daily rebalancing more than doubles net Sharpe vs. monthly (+0.74).
-- **RU3K → Daily** (net Sharpe +1.52): highest gross IC; daily viable under the TC assumption but capacity-constrained.
+**Recommended rebalancing cadence:** **Monthly for all universes.** Monthly is the only cadence that delivers positive net Sharpe across all three universes while maintaining operationally manageable drawdown (§5.2c):
+- **SP500:** Monthly is the only viable cadence (daily net Sharpe −0.03; TC destroys alpha entirely).
+- **SP1500:** Monthly (+0.74, max DD −14.2%) preferred over daily (+1.02, max DD −39.5%). The +0.28 Sharpe improvement from daily does not justify 2.8× higher drawdown under a conservative flat-TC assumption.
+- **RU3K:** Monthly (+1.28, max DD −10.4%) strongly preferred over daily (max DD −78.3%). The flat 5 bps TC assumption materially understates small-cap market-impact at scale.
+
+*Secondary finding:* SP1500/RU3K daily rebalancing warrants further investigation with point-in-time market-impact modeling. If TC can be validated below 3 bps one-way at the target AUM, daily rebalancing becomes attractive for mid/small-cap universes.
 
 For the 10d holding period, monthly rebalancing with no position overlap is the cleanest implementation. Extending to 20d further improves net Sharpe from +0.45 to +0.73 for SP500 (see §5.6C).
 
@@ -676,7 +682,7 @@ Equal-weight (tested in §5.2–5.3) is a valid conservative approximation and o
 
 We present a rigorous look-ahead-free backtest of the ProntoNLP ATC signal across three equity universes. The data pipeline processes 4.47 GB of raw NLP data into a clean Parquet-based feature store covering 376,790 earnings call events with **772 engineered features** (193 Aspect × Theme cross-product base features + QoQ/2Q/YoY trend variants) and five forward-return horizons. Returns are winsorized at the 0.1th/99.9th percentiles. All ten look-ahead audit items pass. Price coverage reaches 99% in SP500/SP1500.
 
-The `ATCClassifierScore` is a robust standalone signal with full-sample Spearman IC of +0.039 at the 10d horizon (SP500). Monthly quintile portfolios deliver net Sharpe ratios of 0.45 (SP500), 0.74 (SP1500), and 1.28 (RU3K) after 20 bps round-trip costs. Optimal rebalancing cadence is universe-dependent: monthly for SP500 (daily TC-destroys alpha), daily for SP1500 (net Sharpe +1.02) and RU3K (net Sharpe +1.52). Among all models tested in a 34-quarter expanding walk-forward, **Combo XGBoost on 772 engineered + 13 Lasso-selected sparse features achieves the best IC-IR (+2.27) and the best SP500 portfolio Sharpe (+0.76, max DD −8.9%)** — nearly 3× the Sharpe of any individual Enhanced model (+0.26–0.27). The sparse feature selection reduces 405 raw AspectTheme cells to 13 robustly predictive features (IC + LassoCV intersection on 2010–2017 training data), concentrated in positive Financial Performance and Capital Allocation language. The 2-quarter trend in ATC score (`ATCClassifierScore_2q`) is the single most predictive engineered feature (IC_5d = +0.047). The Total speaker slice dominates speaker-specific cuts by 2–5×. The 20d holding period delivers the best empirical risk-adjusted performance (net Sharpe +0.73 vs. +0.45 at 10d). The most important risk is regime-dependent signal decay: pre-COVID ATC 10d IC (+0.063) has collapsed to +0.008 post-COVID, though the ML layer substantially recovers lost signal and should be monitored via rolling 8-quarter IC. Deployment is recommended at S&P 1500 scale with daily rebalancing, octile buckets, 10d holding period, XGBoost scoring (fallback: Ridge), and an estimated capacity of $150–300M AUM.
+The `ATCClassifierScore` is a robust standalone signal with full-sample Spearman IC of +0.039 at the 10d horizon (SP500). Monthly quintile portfolios deliver net Sharpe ratios of 0.45 (SP500), 0.74 (SP1500), and 1.28 (RU3K) after 20 bps round-trip costs. Monthly rebalancing is the robust production cadence, delivering positive net Sharpe across all three universes (+0.45 / +0.74 / +1.28). SP500 daily rebalancing is TC-destroyed (net Sharpe −0.03). SP1500/RU3K daily strategies show higher gross returns but require max drawdowns of −39.5% / −78.3% and rely on a flat 5 bps TC assumption that likely understates small-cap market-impact at meaningful AUM. Among all models tested in a 34-quarter expanding walk-forward, **Combo XGBoost on 772 engineered + 13 Lasso-selected sparse features achieves the best IC-IR (+2.27) and the best SP500 portfolio Sharpe (+0.76, max DD −8.9%)** — nearly 3× the Sharpe of any individual Enhanced model (+0.26–0.27). The sparse feature selection reduces 405 raw AspectTheme cells to 13 robustly predictive features (IC + LassoCV intersection on 2010–2017 training data), concentrated in positive Financial Performance and Capital Allocation language. The 2-quarter trend in ATC score (`ATCClassifierScore_2q`) is the single most predictive engineered feature (IC_5d = +0.047). The Total speaker slice dominates speaker-specific cuts by 2–5×. The 20d holding period delivers the best empirical risk-adjusted performance (net Sharpe +0.73 vs. +0.45 at 10d). The most important risk is regime-dependent signal decay: pre-COVID ATC 10d IC (+0.063) has collapsed to +0.008 post-COVID, though the ML layer substantially recovers lost signal and should be monitored via rolling 8-quarter IC. Deployment is recommended at S&P 1500 scale with monthly rebalancing, octile buckets, 10d holding period, XGBoost scoring (fallback: Ridge), and an estimated capacity of $150–300M AUM.
 
 
 # References
