@@ -7,7 +7,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-RESULTS = Path("results")
+RESULTS = Path("reports") / "output"
 OUTPUT  = Path("reports") / "backtest_charts.pdf"
 
 # Ordered sections: (filename, section_label, caption)

@@ -13,9 +13,11 @@
 
 **Implementation:** `00_data_prep.ipynb`, cells 18–19. Vectorized via `numpy.searchsorted` on the NYSE calendar array derived from SPY prices.
 
+**Gray-zone rule (13–16 UTC, documented per §3.1):** The handout notes that calls with hour ≥ 16 UTC are clearly AMC and hour < 13 UTC are clearly BMO; calls in the 13–15 UTC window (≈9 AM–11 AM ET, i.e., during regular market hours) are a gray zone. The distribution in cell 18 shows 131,930 events (35%) fall in this 13–15 UTC range. **Design choice: treat all calls with hour < 16 UTC as same-day entry** (including the 13–15 UTC gray zone). Rationale: these calls occur before the 4 PM ET close; traders receiving the transcript during market hours can act the same day. This is the more conservative (less look-ahead-aggressive) choice — it gives no extra processing time. Using the next day for 13–15 UTC calls would be an acceptable alternative but would waste one day of alpha. Rule is documented here and in cell 18 of `00_data_prep.ipynb`.
+
 **Assertions added (cell 19):**
-- `entry_date > call_date` for all AMC events ✅
-- `entry_date >= call_date` for all BMO events ✅
+- `entry_date > call_date` for all AMC events (hour ≥ 16 UTC) ✅
+- `entry_date >= call_date` for all BMO/gray-zone events (hour < 16 UTC) ✅
 
 **Status: ✅ PASS**
 

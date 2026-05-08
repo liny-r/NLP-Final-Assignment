@@ -1,7 +1,7 @@
 # Backtesting the ProntoNLP Earnings-Call ATC Signal
 
 **Course:** LLM-Driven Quant Research  
-**Author:** Rose Lin  
+**Author:** Yueqi Lin  
 **Dataset:** `Earnings_ATC_until_2026-04-21.csv` (~4.5 GB, not included — see §Data)
 
 ---
