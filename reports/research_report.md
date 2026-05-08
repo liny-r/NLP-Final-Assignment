@@ -399,9 +399,9 @@ Quintile L/S performance at three rebalancing frequencies. Each cadence uses the
 
 *Secondary finding:* Daily rebalancing for SP1500/RU3K produces higher gross returns under the flat 5 bps TC assumption and is worth revisiting with point-in-time market-impact modeling at the target AUM.
 
-2. **Alpha decay supports longer holds for SP500:** IC grows monotonically from 1d to 20d because the classifier was trained on a 14-day window. For SP500 — where daily TC destroys value — a monthly rebalance captures the full information signal in one turnover event.
+- **Alpha decay supports longer holds for SP500:** IC grows monotonically from 1d to 20d because the classifier was trained on a 14-day window. For SP500 — where daily TC destroys value — a monthly rebalance captures the full information signal in one turnover event.
 
-3. **Drawdown control:** Monthly rebalancing reduces SP500 max DD from −58% to −17% by aggregating independent quarterly earnings events rather than stacking intra-week correlated trades.
+- **Drawdown control:** Monthly rebalancing reduces SP500 max DD from −58% to −12% by aggregating independent quarterly earnings events rather than stacking intra-week correlated trades.
 
 The alpha decay chart (`reports/output/alpha_decay.png`) shows IC increasing monotonically from 1d to 20d across all three universes.
 
@@ -526,6 +526,21 @@ The regime analysis reveals a more nuanced picture than simple "ML always adds v
 
 ![Sub-period IC IR by model — Pre-COVID / COVID era / Post-COVID. Ridge leads pre-COVID (IR +4.34 vs baseline +3.34); all models turn negative during COVID; post-COVID all models converge to IR ~0.5–0.65.](output/wf_subperiod_ir.png)
 
+## 5.3d Training-Label Sensitivity
+
+The Combo LGB and XGB models are trained to predict 20d forward returns. As a robustness check, we re-run both models training on 10d labels (same features, same walk-forward design) and evaluate all portfolios against the 20d return outcome:
+
+| Train label | Model | IC IR (vs 20d) | Portfolio Sharpe | bps/mo | Max DD |
+|-------------|-------|----------------|-----------------|--------|--------|
+| 10d labels | Combo LGB | +1.43 | +0.24 | +18.0 | −19.6% |
+| 10d labels | Combo XGB | +1.57 | −0.24 | −19.6 | −36.3% |
+| 20d labels | Combo LGB | +1.14 | −0.34 | −27.7 | −28.3% |
+| 20d labels | Combo XGB | +0.78 | −0.01 | −0.6 | −21.8% |
+
+Training on 10d labels improves Combo LGB IC IR (+1.43 vs +1.14) and portfolio Sharpe (+0.24 vs −0.34), but neither label choice produces a significantly positive SP500 portfolio — confirming that the Combo model tier's SP500 underperformance is structural, not a label-selection artifact. Combo XGB is similarly insensitive to the label choice at the portfolio level.
+
+![Training-label sensitivity — Combo LGB and XGB portfolios trained on 10d vs. 20d labels, evaluated on 20d returns (SP500, monthly). Neither label choice recovers meaningful SP500 alpha.](output/training_label_sensitivity.png)
+
 ## 5.4 SignalType Comparison
 
 IC of `ATCClassifierScore` by speaker-level signal cut (S&P 500):
@@ -636,7 +651,7 @@ The strategy **breaks even near 20 bps one-way** (≈ 80 bps round-trip for a 4-
 
 **Model:** Enhanced Ridge on 772 engineered features (all-universe Sharpe +0.83, IC IR +0.57). Retrain quarterly on expanding window; no sparse feature selection required. For IC-optimised scoring, Combo LightGBM (772 + 30 per-fold IC-selected sparse cells, IC IR +1.14) adds predictive power but is sensitive to SP500 sample sizes. For SP500-specific deployment, the raw ATCClassifierScore (Sharpe +0.60, +59 bps/month) is the most reliable baseline.
 
-**Position sizing:** Rank-proportional, volatility-scaled weights within each octile (weight proportional to rank-deviation / trailing 60d σ_i), capped at 3× equal-weight. 200% gross, market-neutral; target 6–10% annualized vol.
+**Position sizing:** Rank-proportional, volatility-scaled weights within each quintile (weight proportional to rank-deviation / trailing 60d σ_i), capped at 3× equal-weight. 200% gross, market-neutral; target 6–10% annualized vol.
 
 **Capacity:** ~$150–300M AUM at SP1500 scale (187 names per leg, ~18 bps/month net alpha, 20 bps round-trip TC).
 
