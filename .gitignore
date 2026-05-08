@@ -24,6 +24,5 @@ Thumbs.db
 # ── Claude internal ───────────────────────────────────────────────────────────
 .claude/
 
-# ── Results (figures, tables) are gitignored; reproduce via notebooks ─────────
-results/*.png
-results/*.pdf
+# ── Scratch results dir (outputs now written to reports/output/ by notebooks) ──
+results/
