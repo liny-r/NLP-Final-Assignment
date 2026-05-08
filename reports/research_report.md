@@ -190,15 +190,16 @@ All predictive modeling uses an **expanding-window walk-forward** design:
 - **First split:** Train end = 2017Q4; Test = 2018Q1
 - **Walk through:** 2018Q1 → 2026Q2 (34 quarterly steps)
 
-Three model tiers are evaluated at each step:
+Four model tiers are evaluated at each step:
 
 | Tier | Model | Features |
 |------|-------|----------|
 | Baseline | Raw `ATCClassifierScore` (no model) | 1 column |
-| Enhanced | Ridge (α=10) + LightGBM (200 trees) | 772 engineered features |
-| Stretch | LightGBM (300 trees) | 772 engineered + 405 raw sparse features (1,177 total) |
+| Enhanced | RidgeCV (LOO-CV α) + LightGBM (early stopping) | 772 engineered features |
+| Sparse | RidgeCV | 30 per-fold IC-selected raw AspectTheme cells |
+| Combined | RidgeCV + LightGBM + XGBoost (early stopping) | 772 engineered + 30 per-fold sparse (802 total) |
 
-At each step, `StandardScaler` and NaN imputation are fit on training events only and applied to test events. Tree-based models (LightGBM) are scale-invariant and use unscaled features directly. Hyperparameters are tuned once on 2010–2017 using cross-validation, then frozen for the full walk-forward.
+At each step, `StandardScaler` and NaN imputation are fit on training events only and applied to test events. Tree-based models (LightGBM, XGBoost) are scale-invariant and use unscaled features directly. `RidgeCV` selects its regularisation parameter via leave-one-out CV on training data each fold; tree models use the chronologically last 15% of training rows (strictly before the test quarter) as an early-stopping validation set.
 
 ## 3.5 Portfolio Construction
 
@@ -237,7 +238,7 @@ All ten audit items from the handout §3 pass. The complete checklist with imple
 
 # 5. Results
 
-All analyses use `01_analysis.ipynb` running on `events_with_returns.parquet` (376,790 events, 2010–2026, 772 features). Figures are saved to `results/`.
+All analyses use `01_analysis.ipynb` running on `events_with_returns.parquet` (376,790 events, 2010–2026, 772 features). Figures are saved to `reports/output/`.
 
 ## 5.1 Single-Feature IC Analysis
 
@@ -316,7 +317,7 @@ To identify which of the 772 engineered features carry the most predictive power
 | 9 | CS×CapAlloc_Pos_2q | +0.012 | +0.024 | +0.030 | +0.029 | +0.022 |
 | 10 | CS×OpPerf_Net_2q | +0.015 | +0.021 | +0.029 | +0.020 | +0.025 |
 
-*Abbreviations: ATC = ATCClassifierScore; CS = at\_CurrentState; FinPerf = FinancialPerformance; CapAlloc = CapitalAllocation; OpPerf = OperationalPerformance; Net = net\_sentiment. Full feature names in `results/ic_feature_horizon_heatmap.png`.*
+*Abbreviations: ATC = ATCClassifierScore; CS = at\_CurrentState; FinPerf = FinancialPerformance; CapAlloc = CapitalAllocation; OpPerf = OperationalPerformance; Net = net\_sentiment. Full feature names in `reports/output/ic_feature_horizon_heatmap.png`.*
 
 **Key findings:** `ATCClassifierScore_2q` (the 6-month trend in the ATC score) is the single most predictive feature (IC_5d = +0.047), marginally exceeding the raw `ATCClassifierScore` (+0.044). The 2-quarter trend family (suffix `_2q`) consistently outranks both QoQ and YoY variants, suggesting a 6-month lookback is the optimal trend window.
 
@@ -330,15 +331,15 @@ Monthly calendar-time quintile portfolios (20-day holding period, 20 bps round-t
 
 | Universe | Mean LS (bps) | Mean LS net (bps) | Sharpe gross | Sharpe net | Max DD | N periods |
 |----------|--------------|-------------------|--------------|------------|--------|-----------|
-| SP500    | 84.7 | 64.7 | 0.97 | 0.74 | −12.7% | 196 |
-| SP1500   | 78.3 | 58.3 | 1.16 | 0.86 | −30.3% | 196 |
-| RU3K     | 122.8 | 102.8 | 1.85 | 1.55 | −10.2% | 196 |
+| SP500    | 84.2 | 64.2 | 0.96 | 0.73 | −12.4% | 196 |
+| SP1500   | 79.2 | 59.2 | 1.17 | 0.87 | −31.2% | 196 |
+| RU3K     | 121.3 | 101.3 | 1.80 | 1.51 | −11.4% | 196 |
 
-Both the long leg (Q5) and short leg (−Q1) contribute positively in all universes. **RU3K is the strongest universe** with a net Sharpe of 1.55, driven by wider return dispersion in small-cap names; the signal's ~103 bps net spread compresses as stocks grow larger and more analyst-covered. SP1500 offers the best liquidity-adjusted trade-off (Sharpe net 0.86, max DD −30.3%). SP500 alpha is solid after costs (Sharpe net 0.74), confirming the signal retains meaningful alpha even in the most liquid, well-covered universe.
+Both the long leg (Q5) and short leg (−Q1) contribute positively in all universes. **RU3K is the strongest universe** with a net Sharpe of 1.51, driven by wider return dispersion in small-cap names; the signal's ~101 bps net spread compresses as stocks grow larger and more analyst-covered. SP1500 offers the best liquidity-adjusted trade-off (Sharpe net 0.87, max DD −31.2%). SP500 alpha is solid after costs (Sharpe net 0.73), confirming the signal retains meaningful alpha even in the most liquid, well-covered universe.
 
 Note: the RU3K price coverage is only 51%; reported performance reflects the liquid, currently-listed subset of RU3K and carries stronger survivorship bias than the S&P results.
 
-![Monthly quintile L/S equity curves — three universes. RU3K (Sharpe net 1.55) leads, followed by SP1500 (0.86) and SP500 (0.74).](output/quintile_equity_curves.png)
+![Monthly quintile L/S equity curves — three universes. RU3K (Sharpe net 1.51) leads, followed by SP1500 (0.87) and SP500 (0.73).](output/quintile_equity_curves.png)
 
 ## 5.2b Decile Portfolio — Long-Only, Short-Only, and Long-Short
 
@@ -348,7 +349,7 @@ Top decile (D10) long, bottom decile (D1) short, monthly rebalancing, 20-day hol
 
 | Metric | Value |
 |--------|-------|
-| L/S net Sharpe | +0.56 |
+| L/S net Sharpe | +0.55 |
 | Max drawdown (L/S) | −26.4% |
 | N months | 196 |
 
@@ -356,16 +357,16 @@ Top decile (D10) long, bottom decile (D1) short, monthly rebalancing, 20-day hol
 
 | Universe | 1d | 3d | 5d | 10d | 20d |
 |----------|----|----|-----|-----|-----|
-| SP500    | 3  | 16 | 25  | 38  | 66  |
-| SP1500   | 23 | 31 | 36  | 47  | 81  |
-| RU3K     | 37 | 58 | 55  | 78  | 126 |
+| SP500    | 3.2 | 15.6 | 25.0 | 36.5 | 64.5 |
+| SP1500   | 22.3 | 28.9 | 34.0 | 44.8 | 78.2 |
+| RU3K     | 36.7 | 56.7 | 54.2 | 78.1 | 125.0 |
 
 **L/S Decile Sharpe by Universe (monthly, 20d return, net of TC):**
 
 | Universe | L/S Sharpe | Max DD |
 |----------|------------|--------|
-| SP500    | +0.56 | −26.4% |
-| SP1500   | +0.86 | −32.3% |
+| SP500    | +0.55 | −26.4% |
+| SP1500   | +0.80 | −35.2% |
 | RU3K     | +1.21 | −24.9% |
 
 The **decile spread grows monotonically from 1d to 20d** at every universe — consistent with the ATC classifier's 14-day training window. The SP500 20d net spread of 66 bps is nearly double the 10d spread (38 bps), confirming that the full signal horizon is captured only at the 20d hold. The **short leg contributes positively in all three universes** at monthly cadence: bottom-decile stocks systematically underperform, with the effect strongest in RU3K where small-cap short calls face less index-driven reversion.
@@ -402,7 +403,7 @@ Quintile L/S performance at three rebalancing frequencies. Each cadence uses the
 
 3. **Drawdown control:** Monthly rebalancing reduces SP500 max DD from −58% to −17% by aggregating independent quarterly earnings events rather than stacking intra-week correlated trades.
 
-The alpha decay chart (`results/alpha_decay.png`) shows IC increasing monotonically from 1d to 20d across all three universes.
+The alpha decay chart (`reports/output/alpha_decay.png`) shows IC increasing monotonically from 1d to 20d across all three universes.
 
 ![Cadence comparison — quintile L/S cumulative equity curves (all universes × cadences). Monthly is the robust primary cadence; daily is TC-destroyed for SP500 and carries high drawdown risk for SP1500/RU3K.](output/cadence_comparison.png)
 
@@ -429,7 +430,7 @@ The near-equal long and short books confirm the strategy is market-neutral by co
 
 ## 5.3 Walk-Forward Predictive Model
 
-Expanding-window quarterly walk-forward, 2018Q1–2026Q2 (34 steps). Training on all events before the test quarter; target: 20d forward return (aligned with the classifier's 14-day training window). Three model tiers tested: (1) Enhanced — 772 engineered Aspect × Theme cross-product features; (2) Sparse-Only — 13 Lasso-selected raw AspectTheme cells; (3) Combined — 772 engineered + 13 selected sparse cells.
+Expanding-window quarterly walk-forward, 2018Q1–2026Q2 (34 steps). Training on all events before the test quarter; target: 20d forward return (aligned with the classifier's 14-day training window). Four model tiers tested: (1) Enhanced — 772 engineered Aspect × Theme cross-product features; (2) Sparse-Only — 30 per-fold IC-selected raw AspectTheme cells; (3) Combined — 772 engineered + 30 per-fold IC-selected sparse cells (802 total). Models train on all-universe events (SP500 + SP1500 + RU3K combined) to maximise fold sample size; portfolio evaluation below applies per-universe filters.
 
 | Model | Features | Mean IC | Std IC | IR | p-val | n |
 |-------|----------|---------|--------|-------|-------|---|
@@ -456,7 +457,7 @@ Note: the 2026Q2 test set contains only ~178 events (partial quarter). The final
 
 ## 5.3b Walk-Forward Portfolio Simulation
 
-To translate IC into actionable Sharpe, we convert OOS predictions from §5.3 into monthly quintile L/S portfolios (equal-weight, 20 bps round-trip TC, 2018Q1–2026Q2, 100 monthly periods). Two portfolio evaluations are reported: (A) all-universe (SP500+SP1500+RU3K) for Enhanced models; (B) SP500-only comparison across all tiers including Combo XGBoost.
+To translate IC into actionable Sharpe, we convert OOS predictions from §5.3 into monthly quintile L/S portfolios (equal-weight, 20 bps round-trip TC, 2018Q1–2026Q2, 100 monthly periods). Two portfolio evaluations are reported: (A) all-universe (SP500+SP1500+RU3K combined) for Enhanced models; (B) SP500-only comparison across all tiers including Combo XGBoost. For per-universe baseline performance see §5.2 (SP500 +0.73, SP1500 +0.87, RU3K +1.51 net Sharpe over the full 2010–2026 sample); the walk-forward period (2018–2026) produces somewhat lower Sharpe due to post-COVID signal decay (§5.3c).
 
 **(A) All-universe walk-forward portfolio — Enhanced models (Part 2):**
 
@@ -464,7 +465,7 @@ To translate IC into actionable Sharpe, we convert OOS predictions from §5.3 in
 |-------|-----------|--------|-----------|
 | ATC Baseline | 0.75 | −16.2% | 100 |
 | **Ridge (α=10)** | **0.83** | **−20.9%** | 100 |
-| LightGBM 200 | 0.63 | −25.5% | 100 |
+| LightGBM 200 | 0.63 | −25.5% | 98 |
 
 **(B) SP500-only portfolio — all tiers including Combined models (Part 3):**
 
@@ -482,7 +483,7 @@ In the all-universe comparison, Enhanced Ridge (+0.83) provides the most reliabl
 
 ![Walk-forward portfolio equity curves — ATC Baseline, Ridge, LightGBM (monthly quintile L/S, 20 bps TC, all universes).](output/wf_portfolio_comparison.png)
 
-![Part 3 portfolio comparison — Baseline, Enhanced Ridge/LGB, Combo LGB, Combo XGBoost (SP500, monthly). XGBoost dominates on both Sharpe and drawdown.](output/stretch_portfolio_comparison.png)
+![Part 3 portfolio comparison — Baseline, Enhanced Ridge/LGB, Combo LGB, Combo XGBoost (SP500, monthly). ATC Baseline (+0.60 Sharpe) is the strongest SP500 portfolio; all ML models underperform the raw signal.](output/stretch_portfolio_comparison.png)
 
 ## 5.3c Sub-Period IR Breakdown
 
@@ -502,7 +503,7 @@ To assess regime sensitivity, we split the walk-forward period (2018Q1–2026Q2)
 
 The regime analysis reveals a more nuanced picture than simple "ML always adds value": Ridge enhances the signal pre-COVID but becomes harmful during volatility regimes. The ATC baseline is the most consistent model across regimes at the 20d horizon.
 
-![Sub-period IC IR by model — Pre-COVID / COVID era / Post-COVID. ML models (especially Ridge post-COVID) substantially outperform the ATC baseline in regime shifts.](output/wf_subperiod_ir.png)
+![Sub-period IC IR by model — Pre-COVID / COVID era / Post-COVID. Ridge leads pre-COVID (IR +4.34 vs baseline +3.34); all models turn negative during COVID; post-COVID all models converge to IR ~0.5–0.65.](output/wf_subperiod_ir.png)
 
 ## 5.4 SignalType Comparison
 
@@ -529,7 +530,7 @@ The **Total slice dominates all speaker-specific cuts by 2–5×**. CEO, CFO, an
 
 **Signal decay is the most important finding.** Pre-COVID IC was strong (+0.052–0.073 at 10–20d horizons). Post-COVID, the 10d IC is effectively zero (+0.008), and 1d IC turns negative (−0.003). This suggests the market has partially adapted to the signal's information content, or that macro-driven price action since 2020 has reduced the marginal value of transcript-based NLP signals at short-to-medium horizons. Only the 20d IC remains meaningfully positive post-COVID (+0.029), and even that is less than half the pre-COVID level.
 
-**The ML models substantially offset this decay.** As shown in §5.3c, Ridge achieves IR 3.93 and LightGBM achieves IR 3.33 in the post-COVID sub-period, versus only 1.42 for the raw ATC score. The engineered trend features (especially `ATCClassifierScore_2q` and `at_CurrentState_FinancialPerformance_Positive`) recover signal that the raw classifier has lost, confirming the critical importance of the ML layer in the current regime.
+**The ML models do not offset this decay.** As shown in §5.3c, post-COVID all three models converge to near-identical IR: ATC Baseline +0.65, Ridge +0.65, LightGBM +0.51. The ML layer offers no additional resilience in the post-2022 regime — signal decay affects engineered features and the raw classifier equally. Rolling IC monitoring (§6) is therefore essential to detect further deterioration early.
 
 **Sector-neutral IC (S&P 500):**
 
@@ -599,7 +600,7 @@ The strategy **breaks even near 20 bps one-way** (≈ 80 bps round-trip for a 4-
 
 **20d is the empirically optimal holding period** (net Sharpe +0.73), consistent with the ATC classifier's 14-day training window. With monthly rebalancing (~20 trading days), 20d positions naturally expire just as the next rebalance occurs, so position overlap is minimal in practice. This is the primary holding period used throughout this analysis.
 
-![Parameter sensitivity: (A) TC sweep, (B) bucket-count sweep, (C) horizon sweep. Horizon sweep (C) confirms 20d as the optimal holding period; bucket sweep (B) shows octile beats quintile; TC break-even is ~8 bps one-way.](output/parameter_sensitivity.png)
+![Parameter sensitivity: (A) TC sweep, (B) bucket-count sweep, (C) horizon sweep. Horizon sweep (C) confirms 20d as the optimal holding period; bucket sweep (B) shows quintile and octile are near-equal; TC break-even is ~20 bps one-way.](output/parameter_sensitivity.png)
 
 
 # 6. Recommended Deployment
@@ -618,7 +619,7 @@ The strategy **breaks even near 20 bps one-way** (≈ 80 bps round-trip for a 4-
 
 **Capacity:** ~$150–300M AUM at SP1500 scale (187 names per leg, ~18 bps/month net alpha, 20 bps round-trip TC).
 
-**Monitor:** (1) Rolling 8-quarter IC per tier — flag if it falls below +0.01. (2) TC break-even at 8 bps one-way; scale down if AUM growth pushes costs higher. (3) Compare Ridge vs. LGB trailing Sharpe quarterly — regime shifts alter which model leads.
+**Monitor:** (1) Rolling 8-quarter IC per tier — flag if it falls below +0.01. (2) TC break-even at ~20 bps one-way (§5.6A); scale down if AUM growth pushes costs toward that level. (3) Compare Ridge vs. LGB trailing Sharpe quarterly — regime shifts alter which model leads.
 
 
 # 7. Risks and Limitations

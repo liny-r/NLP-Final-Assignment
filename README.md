@@ -16,14 +16,20 @@ A rigorous, look-ahead-free backtest of the ProntoNLP Earnings-Call ATC (Aspect-
 
 ```
 ├── 00_data_prep.ipynb          # Data pipeline: CSV → Parquet → features → returns
+├── 01_analysis.ipynb           # IC, portfolios, walk-forward models, robustness
+├── 02_lookahead_tests.ipynb    # 8 formal look-ahead bias tests (all pass)
+├── Makefile                    # One-command reproduce: make all
+├── build_charts_pdf.py         # Bundles reports/output/*.png into PDF
 ├── reports/
 │   ├── look_ahead_audit.md     # §3 look-ahead bias checklist (required deliverable)
-│   └── research_report.md      # Full research write-up (source for PDF)
+│   ├── research_report.md      # Full research write-up (source for PDF)
+│   ├── research_report.pdf     # Compiled report
+│   ├── backtest_charts.pdf     # All 24 figures bundled
+│   └── output/                 # 24 PNG figures (committed, regenerable)
 ├── data/
 │   └── universes.json          # SP500 / SP1500 / RU3K ticker lists (committed)
-│   # signals.parquet, prices.parquet, events_with_returns.parquet
-│   # and signal_slices.parquet are gitignored (regenerable)
-├── results/                    # Output figures and tables (gitignored)
+│   # signals.parquet, prices.parquet, events_with_returns.parquet,
+│   # signal_slices.parquet, sparse_features.parquet are gitignored (regenerable)
 ├── Student_Handout_Earnings_ATC_Backtest.pdf
 └── README.md
 ```
@@ -32,39 +38,55 @@ A rigorous, look-ahead-free backtest of the ProntoNLP Earnings-Call ATC (Aspect-
 
 ## Reproducing Results
 
-### 1. Prerequisites
+### Quick start (fresh machine, one command)
 
 ```bash
-conda create -n atc python=3.11
+# 1. Clone the repo and cd into it
+git clone <repo-url> && cd <repo-dir>
+
+# 2. Create environment and install dependencies
+conda create -n atc python=3.11 -y
 conda activate atc
-pip install pandas pyarrow yfinance lightgbm scikit-learn tqdm requests
+pip install pandas pyarrow yfinance lightgbm xgboost scikit-learn \
+            tqdm requests jupyter nbconvert matplotlib scipy pandoc
+
+# 3. Place the raw CSV in the project root
+#    Earnings_ATC_until_2026-04-21.csv (~4.5 GB) — request from instructor
+
+# 4. Run everything
+make all    # data prep → analysis → look-ahead tests → PDF report → charts PDF
 ```
 
-### 2. Obtain the data
+`make all` runs the full pipeline end-to-end. Individual targets:
 
-Place `Earnings_ATC_until_2026-04-21.csv` in the project root (not included in repo — request from instructor).
+| Target | What it does |
+|--------|-------------|
+| `make data` | Run `00_data_prep.ipynb` (CSV → Parquet, ~30–60 min) |
+| `make analysis` | Run `01_analysis.ipynb` (IC, portfolios, models, ~20–30 min) |
+| `make tests` | Run `02_lookahead_tests.ipynb` (look-ahead audit, ~2 min) |
+| `make report` | Compile `reports/research_report.pdf` via pandoc |
+| `make charts` | Build `reports/backtest_charts.pdf` from PNGs |
+| `make clean` | Remove generated Parquet files and PNGs |
 
-### 3. Run the data pipeline
+### Manual step-by-step
 
-Open and run **`00_data_prep.ipynb`** top-to-bottom (Kernel → Restart & Run All).
-
-- Runtime: ~30–60 min (dominated by yfinance price fetch on first run)
-- Outputs written to `data/`:
+1. **Prerequisites:** Install dependencies above, place raw CSV in project root.
+2. **Data prep:** Run `00_data_prep.ipynb` top-to-bottom (Kernel → Restart & Run All). Outputs saved to `data/`:
 
 | File | Size | Description |
 |------|------|-------------|
 | `signals.parquet` | ~320 MB | Cleaned signal rows (non-delete, Fluff/Filler dropped) |
 | `prices.parquet` | ~42 MB | Daily adj-close for all universe tickers |
-| `events_with_returns.parquet` | ~204 MB | Total-slice events + 344 features (86 base + QoQ/2Q/YoY trend variants, winsorized returns) + 5 forward returns |
-| `sparse_features.parquet` | ~42 MB | 376,790 rows × 405 raw AspectTheme columns (Stretch model input) |
+| `events_with_returns.parquet` | ~500 MB | Total-slice events + 772 features + 5 forward returns |
+| `sparse_features.parquet` | ~42 MB | 376,790 rows × 405 raw AspectTheme columns |
 | `signal_slices.parquet` | ~35 MB | ATCClassifierScore + EventScores for Total/CEO/CFO/Analysts |
 | `universes.json` | <1 MB | SP500/SP1500/RU3K ticker lists |
 
-> **Subsequent runs are incremental.** `signals.parquet` and `universes.json` are skipped if already present. Price fetching picks up from where it left off.
+> **Subsequent runs are incremental.** `signals.parquet` and `universes.json` are skipped if already present.
 
-### 4. Run the analysis
-
-Open and run **`01_analysis.ipynb`** top-to-bottom. Covers IC analysis (all 3 universes, sector, feature×horizon heatmap), quintile/decile portfolios, walk-forward Ridge + LightGBM (3 tiers), cadence/turnover/exposure analysis, and parameter sensitivity. Runtime: ~20–30 min (dominated by the walk-forward Stretch model).
+3. **Analysis:** Run `01_analysis.ipynb` top-to-bottom (~20–30 min). Figures saved to `reports/output/`.
+4. **Look-ahead tests:** Run `02_lookahead_tests.ipynb` (~2 min). All 8 tests pass; figures saved to `reports/output/`.
+5. **PDF report:** `cd reports && pandoc research_report.md -o research_report.pdf --pdf-engine=xelatex ...` (or `make report`).
 
 ---
 
@@ -95,5 +117,5 @@ All three universes use **current composition** (no point-in-time constituent da
 | Formal look-ahead bias tests (5 tests) | ✅ Complete | `02_lookahead_tests.ipynb` |
 | Analysis notebook | ✅ Complete | `01_analysis.ipynb` |
 | Research PDF (with embedded figures) | ✅ Complete | `reports/research_report.pdf` |
-| Backtest charts (15 figures) | ✅ Complete | `results/` |
+| Backtest charts (24 figures) | ✅ Complete | `reports/output/` + `reports/backtest_charts.pdf` |
 | One-command reproducibility | ✅ Complete | `Makefile` — run `make all` |
