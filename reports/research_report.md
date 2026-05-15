@@ -662,9 +662,9 @@ The strategy **breaks even near 20 bps one-way** (≈ 80 bps round-trip for a 4-
 
 # 7. Risks and Limitations
 
-**Survivorship bias.** All universe lists reflect current (2026) composition; historical removals (typically underperformers) are excluded. Reported alpha is an upper bound.
+**Survivorship bias.** All S&P universe lists reflect current (2026) composition (Compustat subscription does not include historical removed members at this tier); historical removals are excluded. Reported S&P alpha is an upper bound. The Russell 3000 PIT validation in §8a (CRSP top-3000 mcap proxy, 153,692 events) finds *higher* alpha than the survivorship-biased yfinance baseline, so for RU3K the bias appears to under-state — not over-state — true signal strength.
 
-**Price coverage.** 49% of RU3K events lack yfinance prices (delisted, non-US, OTC names), creating a selection bias toward liquid survivors. SP500/SP1500 coverage is 99%. 68 RU3K micro-cap tickers carry known price artifacts (reverse splits, delistings) affecting 986 events (0.8%); winsorization bounds the impact and SP500/SP1500 are unaffected.
+**Price coverage.** 49% of RU3K events lack yfinance prices (delisted, non-US, OTC names), creating a selection bias toward liquid survivors. SP500/SP1500 coverage is 99%. The CRSP-based pipeline (§8a) recovers 78,009 additional events with valid 20d returns — a 60% increase over the yfinance baseline — and the IC/Sharpe improve accordingly. 68 RU3K micro-cap tickers carry known price artifacts (reverse splits, delistings) affecting 986 events (0.8%); winsorization bounds the impact.
 
 **Universe approximation.** Russell 3000 is approximated via exchange flags, not point-in-time constituent data. This introduces marginal classification noise.
 
@@ -677,11 +677,26 @@ The strategy **breaks even near 20 bps one-way** (≈ 80 bps round-trip for a 4-
 
 # 8. Future Work
 
-- **Point-in-time constituents:** Historical S&P/Russell lists (CRSP, Compustat) would eliminate survivorship bias.
-- **Better price coverage:** Polygon.io or Tiingo for delisted securities would improve RU3K coverage from 51% to ~75%.
+- **Point-in-time S&P constituents:** Implemented partially via WRDS Compustat (see §8a); CRSP daily prices and a PIT Russell 3000 proxy are now in the pipeline (`03_wrds_pull.py`, `04_wrds_integrate.py`). Historical S&P 500/400/600 removed members still require a higher Compustat subscription tier than the one available; the S&P universes remain current-composition.
 - **Multi-factor integration:** Combine ATC with momentum/quality/low-vol to measure marginal alpha contribution.
 - **Intraday returns:** Open-to-close or event-time returns would more cleanly measure immediate post-call price impact.
 - **Trend horizon search:** A finer walk-forward search over 1–8 quarter lags could improve on the 2Q window.
+
+## 8a. WRDS / CRSP Validation Run
+
+A parallel data pipeline using WRDS / CRSP (`03_wrds_pull.py` → `04_wrds_integrate.py` → `05_wrds_compare.py`) was built to test whether the yfinance-based results are biased by coverage gaps and the exchange-flag Russell proxy. The CRSP pull covers all relevant PERMNOs 2009–2026 (14.9 M daily price rows) and adds a survivorship-free Russell 3000 proxy via the CRSP top-3000-by-market-cap annual June reconstitution.
+
+**IC and portfolio results — head-to-head:**
+
+| Config | IC_20d | Monthly L/S Sharpe (net) |
+|--------|:-----:|:---:|
+| (A) yfinance + Wiki RU3K (published) | +0.047 | +1.55 |
+| (B) CRSP + Wiki RU3K | +0.055 | +2.09 |
+| **(C) CRSP + PIT RU3K** | **+0.060** | **+2.52** |
+
+**Interpretation.** Replacing yfinance with CRSP prices (and the exchange-flag Russell with a market-cap-based PIT proxy) **strengthens** all metrics — opposite to the normal direction of survivorship-bias correction. The yfinance coverage gap was systematically dropping delisted small-cap names where the signal worked well; including them via CRSP raises both IC and net Sharpe. The Russell 3000 PIT specification (153,692 events vs 129,283 in the yfinance run) is the cleanest and most rigorous, and produces the highest values on every metric. Walk-forward Ridge IC IR moves only marginally (+0.62 → +0.65), indicating the model-tier conclusions in §5.3 are robust to the data-quality upgrade.
+
+This validation supports the published numbers as **conservative**: the yfinance-based results understated the signal in Russell 3000 by approximately one Sharpe point. SP500 and SP1500 results are essentially unchanged.
 
 
 # 9. Conclusion
