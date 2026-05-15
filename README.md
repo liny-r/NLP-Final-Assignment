@@ -17,19 +17,28 @@ A rigorous, look-ahead-free backtest of the ProntoNLP Earnings-Call ATC (Aspect-
 ```
 ├── 00_data_prep.ipynb          # Data pipeline: CSV → Parquet → features → returns
 ├── 01_analysis.ipynb           # IC, portfolios, walk-forward models, robustness
-├── 02_lookahead_tests.ipynb    # 8 programmatic look-ahead bias tests T1–T8 (all pass)
+├── 02_lookahead_tests.ipynb    # 8 programmatic look-ahead tests T1–T8 (all pass)
+├── 03_wrds_pull.py             # WRDS pull: CRSP prices + Russell 3000 PIT proxy (optional)
+├── 04_wrds_integrate.py        # Merge CRSP into events_with_returns_wrds.parquet
+├── 05_wrds_compare.py          # yfinance vs CRSP head-to-head (drives §8a)
+├── 06_wrds_lookahead_tests.py  # 6 additional tests T9–T14 for the WRDS pipeline
 ├── Makefile                    # One-command reproduce: make all
 ├── build_charts_pdf.py         # Bundles reports/output/*.png into PDF
 ├── reports/
 │   ├── look_ahead_audit.md     # §3 look-ahead bias checklist (required deliverable)
 │   ├── research_report.md      # Full research write-up (source for PDF)
 │   ├── research_report.pdf     # Compiled report
-│   ├── backtest_charts.pdf     # All 21 figures bundled
+│   ├── backtest_charts.pdf     # 21-figure bundle (committed)
 │   └── output/                 # 24 PNG figures (committed, regenerable)
 ├── data/
-│   └── universes.json          # SP500 / SP1500 / RU3K ticker lists (committed)
+│   ├── universes.json          # SP500 / SP1500 / RU3K ticker lists (committed)
+│   ├── wrds_sp_constituents.parquet     # WRDS S&P current constituents (small, committed)
+│   ├── wrds_link.parquet                # CRSP-Compustat link table (small, committed)
+│   ├── wrds_names.parquet               # CRSP ticker history (small, committed)
+│   ├── wrds_russell3k_proxy.parquet     # PIT top-3000 mcap snapshots (small, committed)
 │   # signals.parquet, prices.parquet, events_with_returns.parquet,
-│   # signal_slices.parquet, sparse_features.parquet are gitignored (regenerable)
+│   # signal_slices.parquet, sparse_features.parquet,
+│   # wrds_prices.parquet (330 MB), events_with_returns_wrds.parquet (257 MB) are gitignored
 ├── Student_Handout_Earnings_ATC_Backtest.pdf
 └── README.md
 ```
@@ -49,6 +58,8 @@ conda create -n atc python=3.11 -y
 conda activate atc
 pip install pandas pyarrow yfinance lightgbm xgboost scikit-learn \
             tqdm requests jupyter nbconvert matplotlib scipy pandoc
+# Optional (only needed for the WRDS / CRSP validation pipeline, §8a):
+pip install wrds psycopg2-binary
 
 # 3. Place the raw CSV in the project root
 #    Earnings_ATC_until_2026-04-21.csv (~4.5 GB) — request from instructor
@@ -67,6 +78,7 @@ make all    # data prep → analysis → look-ahead tests → PDF report → cha
 | `make report` | Compile `reports/research_report.pdf` via pandoc |
 | `make charts` | Build `reports/backtest_charts.pdf` from PNGs |
 | `make clean` | Remove generated Parquet files and PNGs |
+| `make wrds` | (optional) Run the full WRDS pipeline: `03_wrds_pull.py` → `04_wrds_integrate.py` → `05_wrds_compare.py` → `06_wrds_lookahead_tests.py`. Requires WRDS credentials (~30 min for the price pull) |
 
 ### Manual step-by-step
 
@@ -101,7 +113,8 @@ make all    # data prep → analysis → look-ahead tests → PDF report → cha
 Mean ingestion lag is **1,658 days** — confirming this field records a batch historical backfill, not real-time data availability. Entry dates are based on `MOSTIMPORTANTDATEUTC` only. This choice is documented in `00_data_prep.ipynb` cell 18 and in the look-ahead audit.
 
 ### Universe membership
-All three universes use **current composition** (no point-in-time constituent data available). Reported alpha is an **upper bound**; survivorship bias caveat is stated in all results.
+- **Russell 3000** is point-in-time: CRSP top-3000 by market cap, annual June reconstitution — survivorship-free (auto-loaded when the WRDS-enriched events file exists; falls back to a current-composition exchange-flag proxy otherwise). See §8a in the research PDF.
+- **S&P 500 / 1500** use **current (2026) composition** from Wikipedia (Compustat tier accessible did not include historical removed members). The S&P survivorship-bias caveat is stated explicitly in research report §7; reported S&P alpha is an upper bound (per handout §6.3).
 
 ### Transaction costs
 **5 bps one-way** assumed throughout, per handout §2.2.
@@ -119,3 +132,5 @@ All three universes use **current composition** (no point-in-time constituent da
 | Research PDF (with embedded figures) | ✅ Complete | `reports/research_report.pdf` |
 | Backtest charts (21 figures) | ✅ Complete | `reports/output/` + `reports/backtest_charts.pdf` |
 | One-command reproducibility | ✅ Complete | `Makefile` — run `make all` |
+| PIT Russell 3000 (WRDS / CRSP, survivorship-free) — primary RU3K | ✅ Complete | `03_wrds_pull.py` → `04_wrds_integrate.py`; report §8a |
+| WRDS-pipeline look-ahead audit (T9–T14) | ✅ Complete | `06_wrds_lookahead_tests.py` |

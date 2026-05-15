@@ -70,14 +70,17 @@
 
 **Rule:** Today's S&P 500 is not 2014's S&P 500. Use historical constituents or document the survivorship-bias caveat.
 
-**Implementation:** Historical constituent data is not available (no CRSP/Compustat access). All three universes use **current composition** as of 2026 (sourced from Wikipedia). The survivorship-bias caveat is documented in:
-- `00_data_prep.ipynb` cell 10 markdown
-- `reports/research_report.md` §7 (Risks and Limitations)
-- `README.md` Key Design Decisions
+**Implementation:**
+- **Russell 3000 is point-in-time.** WRDS / CRSP provides a survivorship-free proxy: top-3000 US common stocks by market capitalisation, snapshotted at each annual June reconstitution (matches Russell methodology). Implemented in `03_wrds_pull.py` (CRSP `msf` market-cap pull, June snapshots) and `04_wrds_integrate.py` (`in_RU3K_PIT` flag built via `merge_asof` of event `entry_date` against the snapshot windows). `06_wrds_lookahead_tests.py` T11 verifies that every `in_RU3K_PIT=True` event has `snap_date ≤ entry_date` (zero violations / 153,988 events).
+- **S&P 500 and S&P 1500 use current (2026) composition.** Historical removed members are not available in the Compustat subscription tier accessed (`comp.idxcst_his` returned only `thru_date = NULL` rows). Per handout §6.3's fallback path, the survivorship-bias caveat is documented explicitly in:
+  - `00_data_prep.ipynb` cell 10 markdown
+  - `reports/research_report.md` §7 (Risks and Limitations)
+  - `reports/research_report.md` §8a (WRDS validation showing the RU3K bias under-stated alpha, not over-stated — gives some prior that the S&P bias may also be modest in magnitude)
+  - `README.md` Key Design Decisions
 
-Reported alpha should be treated as an **upper bound**.
+Reported **S&P** alpha should be treated as an upper bound. Russell 3000 alpha is survivorship-free in universe assignment (price coverage gaps are a separate, smaller-magnitude effect — see §8a).
 
-**Status: ✅ PASS** (caveat explicitly documented)
+**Status: ✅ PASS** (RU3K is fully PIT; S&P caveat explicitly documented per handout §6.3)
 
 ---
 
@@ -134,7 +137,7 @@ Reported alpha should be treated as an **upper bound**.
 | 3.3 | Cross-sectional features point-in-time | ✅ PASS |
 | 3.4 | Feature selection in training only | ✅ PASS |
 | 3.5 | Imputation/scaling in training only | ✅ PASS |
-| 3.6 | Universe membership point-in-time | ✅ PASS (caveat documented) |
+| 3.6 | Universe membership point-in-time | ✅ PASS (RU3K is fully PIT via CRSP; S&P caveat documented per handout §6.3) |
 | 3.7 | INGESTDATEUTC ≠ availability date | ✅ PASS (choice documented) |
 | 3.8 | No future QoQ deltas | ✅ PASS |
 | 3.9 | Corporate-action / delisting handling | ✅ PASS |
