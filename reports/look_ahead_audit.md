@@ -2,10 +2,34 @@
 
 **Project:** Backtesting the ProntoNLP Earnings-Call ATC Signal  
 **Author:** Yueqi Lin  
-**Notebook:** `00_data_prep.ipynb`  
 **Reference:** Student Handout §3 — *Look-Ahead Bias: The Audit You Must Pass*
 
 ---
+
+## One-Page Sign-Off
+
+| # | Item | Pass | One-line justification |
+|---|------|:--:|------------------------|
+| 3.1 | Entry timing (AMC vs BMO) | ✅ | `hour ≥ 16 UTC` → next NYSE trading day; `hour < 16 UTC` → same day. Vectorised `np.searchsorted` on SPY-derived calendar. Assertions in `00_data_prep.ipynb` cell 19. |
+| 3.2 | Return columns disjoint from features | ✅ | `{return_1d…return_20d}` ∩ `feature_cols` = ∅ (assertion in cell 24). T2 programmatic test: 0 overlaps / 772 features. |
+| 3.3 | Cross-sectional features point-in-time | ✅ | All cross-sectional features (sector ranks, Z-scores) deferred to `01_analysis.ipynb` walk-forward; computed per fold on training-set events only. |
+| 3.4 | Feature selection inside training | ✅ | IC top-30 sparse selection re-fit on each fold's training data (no full-sample selection). |
+| 3.5 | Imputation and scaling inside training | ✅ | `StandardScaler.fit(train)` → `transform(test)` pattern inside walk-forward loop. |
+| 3.6 | Universe membership point-in-time | ✅ | RU3K is fully PIT via CRSP top-3000 mcap proxy (annual June reconstitution; T11 verifies). S&P 500/1500 use current composition with explicit caveat per handout §6.3 fallback path. |
+| 3.7 | `INGESTDATEUTC` ≠ availability date | ✅ | Mean lag 1,658 days (batch backfill); entry date uses `MOSTIMPORTANTDATEUTC` only, decision documented with statistical justification. T6: 0 INGEST features in model input. |
+| 3.8 | No "future" QoQ deltas | ✅ | All QoQ/2Q/YoY deltas use `.shift(1/2/4)` within ticker sorted by `entry_date` ascending — past data only. T8 programmatic verification. |
+| 3.9 | Corporate-action / delisting handling | ✅ | NaN-return events excluded (no roll-forward). Rule documented in `00_data_prep.ipynb` §9b and §7 of the research PDF. |
+| 3.10 | Hyperparameter tuning leaks | ✅ | Initial tuning on 2010–2017 sub-period; walk-forward 2018Q1+ uses frozen hyperparameters. No full-sample grid search. |
+
+**Programmatic verification:** T1–T8 in `02_lookahead_tests.ipynb` and T9–T14 in `06_wrds_lookahead_tests.py` — **all 14 tests PASS**.
+
+**Signed:** Yueqi Lin  ·  **Date:** May 2026  ·  **Course:** LLM-Driven Quant Research — Final Assignment
+
+---
+
+# Detail (per-item write-ups)
+
+The sections below give the full implementation detail for each audit item. The one-page sign-off above is the deliverable required by handout §2.3; the detail below is provided for thoroughness.
 
 ## §3.1 — Entry Timing: AMC vs BMO
 

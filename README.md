@@ -28,8 +28,8 @@ A rigorous, look-ahead-free backtest of the ProntoNLP Earnings-Call ATC (Aspect-
 │   ├── look_ahead_audit.md     # §3 look-ahead bias checklist (required deliverable)
 │   ├── research_report.md      # Full research write-up (source for PDF)
 │   ├── research_report.pdf     # Compiled report
-│   ├── backtest_charts.pdf     # 21-figure bundle (committed)
-│   └── output/                 # 24 PNG figures (committed, regenerable)
+│   ├── backtest_charts.pdf     # 22-figure bundle (committed)
+│   └── output/                 # 25 PNG figures (committed, regenerable)
 ├── data/
 │   ├── universes.json          # SP500 / SP1500 / RU3K ticker lists (committed)
 │   ├── wrds_sp_constituents.parquet     # WRDS S&P current constituents (small, committed)
@@ -130,7 +130,7 @@ Mean ingestion lag is **1,658 days** — confirming this field records a batch h
 | Formal look-ahead bias tests (8 programmatic tests T1–T8) | ✅ Complete | `02_lookahead_tests.ipynb` |
 | Analysis notebook | ✅ Complete | `01_analysis.ipynb` |
 | Research PDF (with embedded figures) | ✅ Complete | `reports/research_report.pdf` |
-| Backtest charts (21 figures) | ✅ Complete | `reports/output/` + `reports/backtest_charts.pdf` |
+| Backtest charts (22 figures) | ✅ Complete | `reports/output/` + `reports/backtest_charts.pdf` |
 | One-command reproducibility | ✅ Complete | `Makefile` — run `make all` |
 | PIT Russell 3000 (WRDS / CRSP, survivorship-free) — primary RU3K | ✅ Complete | `03_wrds_pull.py` → `04_wrds_integrate.py`; report §8a |
 | WRDS-pipeline look-ahead audit (T9–T14) | ✅ Complete | `06_wrds_lookahead_tests.py` |

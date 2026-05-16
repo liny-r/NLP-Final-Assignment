@@ -655,6 +655,8 @@ The strategy **breaks even near 20 bps one-way** (≈ 80 bps round-trip for a 4-
 
 **Position sizing:** Rank-proportional, volatility-scaled weights within each quintile (weight proportional to rank-deviation / trailing 60d σ_i), capped at 3× equal-weight. 200% gross, market-neutral; target 6–10% annualized vol.
 
+*Note on backtest vs. recommended sizing:* §5 backtests use equal-weight quintile L/S construction (the cleanest comparison across model tiers and universes). The recommended rank-proportional, vol-scaled rule is a production refinement that typically lowers realised vol by 10–25% without materially shifting Sharpe (the rank ordering — not the within-quintile weighting — drives the alpha). Practitioners can also revert to equal-weight without invalidating the backtest results.
+
 **Capacity:** ~$150–300M AUM at SP1500 scale (187 names per leg, ~18 bps/month net alpha, 20 bps round-trip TC).
 
 **Monitor:** (1) Rolling 8-quarter IC per tier — flag if it falls below +0.01. (2) TC break-even at ~20 bps one-way (§5.6A); scale down if AUM growth pushes costs toward that level. (3) Compare Ridge vs. LGB trailing Sharpe quarterly — regime shifts alter which model leads.

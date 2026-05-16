@@ -38,6 +38,11 @@ FIGURES = [
      "Net decile spread by universe × horizon. Spread grows monotonically from 1d to 20d,\n"
      "consistent with the ATC classifier's 14-day training window."),
 
+    ("quintile_spread.png",
+     "§2a  Quintile Spread Heatmap (Q5−Q1 net, bps)",
+     "Net quintile spread by universe × horizon (monthly rebalance, 20 bps round-trip TC).\n"
+     "RU3K-PIT 20d spread of +115 bps/month leads; quintile is the primary spec used in §6."),
+
     ("alpha_decay.png",
      "§2c  Alpha Decay — IC vs. Return Horizon",
      "Spearman IC of ATCClassifierScore at 1, 3, 5, 10, 20-day horizons (all universes).\n"
